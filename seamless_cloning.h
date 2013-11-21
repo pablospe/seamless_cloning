@@ -1,5 +1,8 @@
 #include "opencv2/core/core.hpp"
 
+#ifndef __SEAMLESS_CLONING_H__
+#define __SEAMLESS_CLONING_H__
+
 void seamlessClone(cv::InputArray _src,
                    cv::InputArray _dst,
                    cv::InputArray _mask,
@@ -26,3 +29,5 @@ void textureFlattening(cv::InputArray _src,
                        double low_threshold,
                        double high_threshold,
                        int kernel_size);
+
+#endif

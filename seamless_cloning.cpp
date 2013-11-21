@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <opencv2/photo/photo.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#include "utils.h"
 
 using namespace std;
 using namespace cv;
@@ -20,9 +23,9 @@ void seamlessClone(cv::InputArray _src,
   _blend.create(dest.size(), CV_8UC3);
   Mat blend = _blend.getMat();
 
-  int minx = INT_MAX, miny = INT_MAX, maxx = INT_MIN, maxy = INT_MIN;
-  int h = mask.size().height;
-  int w = mask.size().width;
+  int h = mask.rows;
+  int w = mask.cols;
+  int minx = w, miny = h, maxx = 0, maxy = 0;
 
   Mat gray = Mat(mask.size(), CV_8UC1);
   Mat dst_mask = Mat::zeros(dest.size(), CV_8UC1);
@@ -34,11 +37,12 @@ void seamlessClone(cv::InputArray _src,
   else
     gray = mask;
 
-  for(int i = 0; i < h; i++)
+  // Mask bounding box
+  for(int j = 0; j < h; j++)
   {
-    for(int j = 0; j < w; j++)
+    for(int i = 0; i < w; i++)
     {
-      if(gray.at<uchar> (i, j) == 255)
+      if(gray.at<uchar>(j, i) == 255)
       {
         minx = std::min(minx, i);
         maxx = std::max(maxx, i);
@@ -47,23 +51,22 @@ void seamlessClone(cv::InputArray _src,
       }
     }
   }
-
   int lenx = maxx - minx;
   int leny = maxy - miny;
 
-  int minxd = p.y - lenx / 2;
-  int maxxd = p.y + lenx / 2;
-  int minyd = p.x - leny / 2;
-  int maxyd = p.x + leny / 2;
+  int minxd = p.x;
+  int maxxd = p.x + lenx;
+  int minyd = p.y;
+  int maxyd = p.y + leny;
 
-  if(minxd < 0 || minyd < 0 || maxxd > dest.size().height || maxyd > dest.size().width)
+  if(maxxd > dest.cols || maxyd > dest.rows)
   {
     cout << "Index out of range" << endl;
-    exit(0);
+    return;
   }
 
-  Rect roi_d(minyd, minxd, leny, lenx);
-  Rect roi_s(miny, minx, leny, lenx);
+  Rect roi_d(minxd, minyd, lenx, leny);
+  Rect roi_s(minx, miny, lenx, leny);
 
   Mat destinationROI = dst_mask(roi_d);
   Mat sourceROI = cs_mask(roi_s);
