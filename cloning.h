@@ -1,5 +1,8 @@
 #include "opencv2/core/core.hpp"
 
+#ifndef __CLONING_H__
+#define __CLONING_H__
+
 class Cloning
 {
 public:
@@ -31,3 +34,5 @@ private:
 
   cv::Mat grx, gry, sgx, sgy, srx32, sry32, grx32, gry32, smask, smask1;
 };
+
+#endif
