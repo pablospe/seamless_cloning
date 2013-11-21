@@ -17,4 +17,7 @@ inline void draw_cross(cv::Mat &img,
            cv::Point(center.x - d, center.y + d), color, 2, CV_AA, 0);
 }
 
+// Create an image where 'src' is paste into 'dst', starting in point 'p'
+void cutpaste(const cv::Point &p, const cv::Mat &src, cv::Mat &dst);
+
 #endif

@@ -8,32 +8,68 @@
 using namespace std;
 using namespace cv;
 
-Mat src, dst, subimg, result;
+/* Select region of interest by left click mouse button.
+ * A rectangular ROI (mask) will be created */
+void create_square_mask(const cv::Mat &src, cv::Mat &mask);
 
+/* Mouse handler for create_square_mask(...) */
+void create_square_mask_handler(int event, int x, int y, int flags, void *param);
+
+
+/* Select the place where src image will be in the final result */
+void place_src(const cv::Mat &src,
+               const cv::Mat &mask,
+               const cv::Mat &dst,
+               Point &dst_point);
+
+/* Mouse handler for place_src_handler(...) */
+void place_src_handler(int event, int x, int y, int flags, void *param);
+
+
+int main(int argc, char **argv)
+{
+  string folder = "../images/";
+  string id = "02";
+  string original_path1 = folder + "source"      + id + ".png";
+  string original_path2 = folder + "destination" + id + ".png";
+  string original_path3 = folder + "mask"        + id + ".png";
+
+  // read images
+  Mat source = imread(original_path1);
+  Mat destination = imread(original_path2);
+//   Mat mask = imread(original_path3);
+
+  // source image
+  Mat mask;
+  create_square_mask(source, mask);
+
+  // destination image
+  Point dst_point;
+  place_src(source, mask, destination, dst_point);
+
+  Mat result;
+  seamlessClone(source, destination, mask, dst_point, result, 1);
+
+  // save blended result
+  imshow("Image cloned", result);
+//   imwrite("result.png", result);
+  waitKey(0);
+
+  return 0;
+}
+
+
+
+// Some global variables (main() shouldn't know about these variables)
+// TODO: remove these variables, probably using "void *param" in the handlers
+Mat g_src, g_dst, subimg, result, g_mask;
 Point point;
 int drag = 0;
 int destx = -1, desty = -1;
 
-void cutpaste(const Point &p, const Mat &src, Mat &target)
-{
-  if(p.x<0 || p.y<0 || p.x+src.cols>target.cols || p.y+src.rows>target.rows)
-  {
-    cout << "Out of range" << endl;
-    return;
-  }
 
-  Mat dst_roi = target(Rect(p.x, p.y, src.cols, src.rows));
-  src.copyTo(dst_roi);
-}
-
-void selectPointHandler(int event, int x, int y, int flags, void *param)
-{
-  point = Point(x, y);
-  cout << x << " " << y << endl;
-//   cout.flush();
-}
-
-void mouseHandler(int event, int x, int y, int flags, void *param)
+// Note: it will change some global variables: point, drag, subimg, mask
+void create_square_mask_handler(int event, int x, int y, int flags, void *param)
 {
   if(event == CV_EVENT_LBUTTONDOWN && !drag)
   {
@@ -48,117 +84,87 @@ void mouseHandler(int event, int x, int y, int flags, void *param)
       return;
 
     Rect roi(point.x, point.y, x - point.x, y - point.y);
-    src(roi).copyTo(subimg);
-    imshow("ROI", subimg);
-    imshow("Source", src);
+    g_src(roi).copyTo(subimg);
+    imshow("subimg", subimg);
+    imshow("Source", g_src);
     waitKey(3);
+
+    // create mask same size as source, and in white (255) the selected subimg
+    g_mask  = Mat::zeros(g_src.size(), CV_8UC1);
+    Mat white = Mat::ones(subimg.size(), CV_8UC1)*255;
+    cutpaste(point, white, g_mask);
+
     drag = 0;
   }
 
   if(event == CV_EVENT_MOUSEMOVE && drag)
   {
     Mat tmp;
-    src.copyTo(tmp);
+    g_src.copyTo(tmp);
     rectangle(tmp, point, Point(x, y), CV_RGB(255, 0, 0), 1, 8, 0);
     imshow("Source", tmp);
   }
 
   if(event == CV_EVENT_RBUTTONUP)
   {
-    imshow("Source", src);
+    imshow("Source", g_src);
     drag = 0;
   }
 }
 
+void create_square_mask(const cv::Mat &src, cv::Mat &mask)
+{
+  // TODO: don't use global variables
+  point = Point(0,0);  // starting point of the ROI
+  drag = 0;
+  subimg = Mat();
+  g_mask = Mat();
 
-void mouseHandler1(int event, int x, int y, int flags, void *param)
+  g_src = src;
+
+  namedWindow("Source");
+  setMouseCallback("Source", create_square_mask_handler, NULL);
+  imshow("Source", src);
+  waitKey(0);
+
+  g_mask.copyTo(mask);
+}
+
+void place_src_handler(int event, int x, int y, int flags, void *param)
 {
   Mat im;
-  dst.copyTo(im);
+  g_dst.copyTo(im);
 
   if(event == CV_EVENT_LBUTTONDOWN)
   {
-    rectangle(im, Point(x,y), Point(x + subimg.cols, y + subimg.rows),
+    rectangle(im, Point(x, y), Point(x + subimg.cols, y + subimg.rows),
               CV_RGB(255, 0, 0), 1, 8, 0);
 
     destx = x;
     desty = y;
 
-    cout << x << " " << y << " "
-         << subimg.cols << " " << subimg.rows << " "
-         << dst.cols << " " << dst.rows << endl;
+    cout << Point(x, y) << endl;
 
     imshow("Destination", im);
   }
-
-  if(event == CV_EVENT_RBUTTONUP)
-  {
-
-    if(destx < 0 || desty < 0)
-    {
-      cout << "Select mask location (Left Click)" << endl;
-      return;
-    }
-
-    if(destx + subimg.cols > dst.cols || desty + subimg.rows > dst.rows)
-    {
-      cout << "Index out of range" << endl;
-      return;
-    }
-
-    // create mask same size as source, and in white (255) the selected subimg
-    Mat mask  = Mat::zeros(src.size(), CV_8UC1);
-    Mat white = Mat::ones(subimg.size(), CV_8UC1)*255;
-    cutpaste(point, white, mask);
-
-    Rect r(point.x, point.y, white.cols, white.rows);
-    cout << "Bounding box: " << r << endl;
-
-
-
-    seamlessClone(src, dst, mask, Point(destx, desty), result, 1);
-
-    ////////// save blended result ////////////////////
-    imwrite("Output.jpg", result);
-
-    cutpaste(Point(destx, desty), subimg, im);
-    imwrite("cutpaste.jpg", im);
-
-    imshow("Image cloned", result);
-    waitKey(0);
-
-    destx = desty = -1;
-  }
 }
 
-int main(int argc, char **argv)
+void place_src(const cv::Mat &src,
+               const cv::Mat &mask,
+               const cv::Mat &dst,
+               Point &dst_point)
 {
-  string folder = "../images/";
-  string id = "01";
-  string original_path1 = folder + "source"      + id + ".png";
-  string original_path2 = folder + "destination" + id + ".png";
-  string original_path3 = folder + "mask"        + id + ".png";
+  // TODO: don't use global variables
+  destx = desty = -1;
 
-  // read images
-  Mat source = imread(original_path1);
-  Mat destination = imread(original_path2);
-  Mat mask = imread(original_path3);
+  g_src  = src;
+  g_mask = mask;
+  g_dst  = dst;
 
-
-  src = source;
-  dst = destination;
-
-  //////////// source image ///////////////////
-  namedWindow("Source");
-  setMouseCallback("Source", mouseHandler, NULL);
-  imshow("Source", src);
-
-  /////////// destination image ///////////////
   namedWindow("Destination");
-  setMouseCallback("Destination", mouseHandler1, NULL);
+  setMouseCallback("Destination", place_src_handler, NULL);
   imshow("Destination", dst);
-
   waitKey(0);
 
-  return 0;
+  dst_point = Point(destx, desty);
 }
