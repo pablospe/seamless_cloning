@@ -2,6 +2,7 @@
 #define __INTERACTIVE_H__
 
 #include "utils.h"
+#include "path.h"
 
 //! \brief Select region of interest by left clicking with the mouse button.
 //! A rectangular ROI (mask) will be created.

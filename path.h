@@ -13,7 +13,7 @@ void mask2contour(const cv::Mat &mask, Path &contour);
 
 //! \brief Draw a path in the image 'out'.
 void draw_path(const cv::Mat &in, Path &path, cv::Mat &out,
-               const cv::Scalar &color =CV_RGB(0, 255, 125));
+               const cv::Scalar &color =cv::Scalar(0, 255, 125));
 
 //! \brief Close an open path (first and last element will be the same).
 //! It is possible to extend to the image bottom with 'extend_to'.
