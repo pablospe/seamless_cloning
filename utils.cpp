@@ -76,20 +76,21 @@ void mask2contour(const Mat &mask, Path &contour)
 
 void draw_path(const Mat &in, Path &path, Mat &out, const Scalar &color)
 {
+  Point prev_point, point;
+  int thickness = 4;
+
+  // Copy image
   in.copyTo(out);
 
-  Point prev_point = Point(-1,-1);
-  Point point;
+  // first point
+  prev_point = point = path[0];
+  line(out, prev_point, point, color, thickness);
 
-  for(size_t i=0; i<path.size(); i++)
+  // remaining point
+  for(size_t i=1; i<path.size(); i++)
   {
     point = path[i];
-
-    if( prev_point == Point(-1,-1) )
-      prev_point = point;
-    else
-      line(out, prev_point, point, color, 4);
-
+    line(out, prev_point, point, color, thickness);
     prev_point = point;
   }
 }
