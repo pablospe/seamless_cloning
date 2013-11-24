@@ -7,6 +7,7 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 add_executable( seamless_cloning main.cpp
                                  seamless_cloning.cpp
                                  cloning.cpp
-                                 utils.cpp)
+                                 utils.cpp
+                                 interactive.cpp)
 
 target_link_libraries( seamless_cloning ${OpenCV_LIBS} )
