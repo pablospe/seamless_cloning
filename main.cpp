@@ -1,8 +1,9 @@
 #include <iostream>
 
+#include "path.h"
+#include "interactive.h"
 #include "seamless_cloning.h"
 #include "utils.h"
-#include "interactive.h"
 
 using namespace std;
 using namespace cv;

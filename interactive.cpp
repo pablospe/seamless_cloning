@@ -1,3 +1,4 @@
+#include "path.h"
 #include "interactive.h"
 
 #include <iostream>
