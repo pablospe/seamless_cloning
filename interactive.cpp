@@ -14,7 +14,7 @@ static Point g_point;
 static int g_drag = 0;
 static int destx = -1, desty = -1;
 
-void create_square_mask_handler(int event, int x, int y, int flags, void *param)
+static void create_square_mask_handler(int event, int x, int y, int flags, void *param)
 {
   if(event == CV_EVENT_LBUTTONDOWN && !g_drag)
   {
@@ -71,7 +71,7 @@ void create_square_mask(const cv::Mat &src, cv::Mat &mask)
   g_mask.copyTo(mask);
 }
 
-void place_src_handler(int event, int x, int y, int flags, void *param)
+static void place_src_handler(int event, int x, int y, int flags, void *param)
 {
   Mat im;
   g_dst.copyTo(im);
@@ -123,7 +123,7 @@ static Point prev_point = Point(-1,-1);
 static Mat g_img;
 static Path g_path;
 
-void on_mouse(int event, int x, int y, int flags, void *param)
+static void on_mouse(int event, int x, int y, int flags, void *param)
 {
 
   if(event == CV_EVENT_MOUSEMOVE && (flags & CV_EVENT_FLAG_LBUTTON))
