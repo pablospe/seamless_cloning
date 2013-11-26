@@ -65,6 +65,10 @@ void seamlessClone(cv::InputArray _src,
     return;
   }
 
+  // Move point
+  minxd = p.x + minx;
+  minyd = p.y + miny;
+
   Rect roi_d(minxd, minyd, lenx, leny);
   Rect roi_s(minx, miny, lenx, leny);
 
