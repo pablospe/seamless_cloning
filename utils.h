@@ -9,8 +9,8 @@
 //! \brief Draw a cross in the image.
 inline void draw_cross(cv::Mat &img,
                        const cv::Point &center,
-                       const cv::Scalar &color,
-                       unsigned d)
+                       const cv::Scalar &color =cv::Scalar(0,0,255),
+                       unsigned d =3)
 {
   cv::line(img, cv::Point(center.x - d, center.y - d),
            cv::Point(center.x + d, center.y + d), color, 2, CV_AA, 0);
