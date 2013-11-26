@@ -21,13 +21,34 @@ void on_click_mouse(int event, int x, int y, int flags, void *param)
     cout << Point(x,y) << endl;
 }
 
+// Apply homography 'H' to corners of the image 'img'
+void apply_H_to_corners(const Mat &img, const Mat &H, vector<Point2f> &projected_corners)
+{
+  int h = img.rows;
+  int w = img.cols;
+
+  // Get image corners and apply transformation
+  vector<Point2f> corners(4);
+  corners[0] = Point(0, 0);
+  corners[1] = Point(w, 0);
+  corners[2] = Point(w, h);
+  corners[3] = Point(0, h);
+  perspectiveTransform(corners, projected_corners, H);
+
+//   for(size_t i = 0; i < projected_corners.size(); i++)
+//     PRINT(projected_corners[i]);
+}
+
+// void quadri2rect()
+// {}
+
 int main(int argc, char **argv)
 {
 // /*
 
   // Command line
   const char *commandline_usage = "\tusage: ./seamless_cloning -h[--help] | --id <dataset>\n";
-  string id = "08";
+  string id = "03";
 
   for (int i = 1; i < argc; i++)
   {
@@ -78,48 +99,41 @@ int main(int argc, char **argv)
 
   // Find Homography
   Mat inverted_mask = 255 - mask;
-  Mat H = findH(src, dst, inverted_mask);
+  bool display = true;
+//   bool display = false;
+  Mat H = findH(src, dst, inverted_mask, cv::Mat(), display);
   Mat H_inv = H.inv();
 //   waitKey(0);
 
 
-  //! Get the corners from the obj (the object to be "detected")
-  vector<Point2f> obj_corners(4);
-  obj_corners[0] = Point(0,0);
-  obj_corners[1] = Point(dst.cols, 0);
-  obj_corners[2] = Point(dst.cols, dst.rows);
-  obj_corners[3] = Point(0, dst.rows);
-
   vector<Point2f> scene_corners(4);
-  perspectiveTransform( obj_corners, scene_corners, H_inv );
-
-  for(size_t i=0; i<scene_corners.size(); i++)
-  {
-    PRINT(scene_corners[i]);
-  }
+  apply_H_to_corners(dst, H_inv, scene_corners);
 
 
+  // Get inner rectangle from a quadrilateral
   vector<Point2f> P(4);
   P = scene_corners;
   float A, B, C, D;
-  A = max(P[0].x,P[3].x);
-  B = max(P[0].y,P[1].y);
-  C = min(P[1].x,P[2].x);
-  D = min(P[2].y,P[3].y);
-  Rect_<float> roi = Rect_<float>( Point2f(A,B), Point2f(C,D) );
+  A = max(P[0].x, P[3].x);
+  B = max(P[0].y, P[1].y);
+  C = min(P[1].x, P[2].x);
+  D = min(P[2].y, P[3].y);
+  Rect_<float> roi = Rect_<float>(Point2f(A, B), Point2f(C, D));
   PRINT(roi);
 
-  Mat_<double> H_trans = (Mat_<double>(3,3) <<  1,  0, -A,
-                                                0,  1, -B,
-                                                0,  0,  1 );
+  Mat_<double> H_trans = (Mat_<double>(3, 3) <<  1,  0, -A,
+                                                 0,  1, -B,
+                                                 0,  0,  1 );
 
   PRINT(H_trans);
-  obj_corners[0] = Point2f(A,B);
-  obj_corners[1] = Point2f(C,B);
-  obj_corners[2] = Point2f(C,D);
-  obj_corners[3] = Point2f(A,D);
-  perspectiveTransform( obj_corners, scene_corners, H_trans );
-  for(size_t i=0; i<scene_corners.size(); i++)
+  vector<Point2f> obj_corners(4);
+  obj_corners[0] = Point2f(A, B);
+  obj_corners[1] = Point2f(C, B);
+  obj_corners[2] = Point2f(C, D);
+  obj_corners[3] = Point2f(A, D);
+  perspectiveTransform(obj_corners, scene_corners, H_trans);
+
+  for(size_t i = 0; i < scene_corners.size(); i++)
     PRINT(scene_corners[i]);
 
 
