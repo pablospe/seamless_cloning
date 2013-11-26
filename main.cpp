@@ -9,6 +9,8 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/nonfree/features2d.hpp>
 #include <opencv2/core/types_c.h>
+#include <opencv2/stitching/stitcher.hpp>
+
 
 using namespace std;
 using namespace cv;
@@ -105,42 +107,42 @@ cv::Mat findHomography(const cv::Mat &img_1,
   }
   cout << "Number of inliers = " << inliers.size() << endl;
 
-//   //! Get the corners from the obj (the object to be "detected")
-//   vector<Point2f> obj_corners(4);
-//   obj_corners[0] = Point(0,0);
-//   obj_corners[1] = Point( img_1.cols, 0 );
-//   obj_corners[2] = Point( img_1.cols, img_1.rows );
-//   obj_corners[3] = Point( 0, img_1.rows );
-//   vector<Point2f> scene_corners(4);
-//
-//   perspectiveTransform( obj_corners, scene_corners, H );
-//
-//   //! Draw lines between the corners (the mapped object in the scene)
-//   Mat img_matches;
-//   drawMatches( img_1, keypoints_1, img_2, keypoints_2,
-//                inliers, img_matches, Scalar::all(-1), Scalar::all(-1),
-//                vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-//
-//   line( img_matches, scene_corners[0] + Point2f( img_1.cols, 0),
-//         scene_corners[1] + Point2f( img_1.cols, 0),
-//         Scalar(0, 255, 0), 2 );
-//
-//   line( img_matches, scene_corners[1] + Point2f( img_1.cols, 0),
-//         scene_corners[2] + Point2f( img_1.cols, 0),
-//         Scalar( 0, 255, 0), 2 );
-//
-//   line( img_matches, scene_corners[2] + Point2f( img_1.cols, 0),
-//         scene_corners[3] + Point2f( img_1.cols, 0),
-//         Scalar( 0, 255, 0), 2 );
-//
-//   line( img_matches, scene_corners[3] + Point2f( img_1.cols, 0),
-//         scene_corners[0] + Point2f( img_1.cols, 0),
-//         Scalar( 0, 255, 0), 2 );
-//
-//   //! Show detected matches
-//   namedWindow( "Good Matches & Object detection", CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED );
-//   imshow( "Good Matches & Object detection", img_matches );
-//   waitKey(3);
+  //! Get the corners from the obj (the object to be "detected")
+  vector<Point2f> obj_corners(4);
+  obj_corners[0] = Point(0,0);
+  obj_corners[1] = Point( img_1.cols, 0 );
+  obj_corners[2] = Point( img_1.cols, img_1.rows );
+  obj_corners[3] = Point( 0, img_1.rows );
+  vector<Point2f> scene_corners(4);
+
+  perspectiveTransform( obj_corners, scene_corners, H );
+
+  //! Draw lines between the corners (the mapped object in the scene)
+  Mat img_matches;
+  drawMatches( img_1, keypoints_1, img_2, keypoints_2,
+               inliers, img_matches, Scalar::all(-1), Scalar::all(-1),
+               vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+
+  line( img_matches, scene_corners[0] + Point2f( img_1.cols, 0),
+        scene_corners[1] + Point2f( img_1.cols, 0),
+        Scalar(0, 255, 0), 2 );
+
+  line( img_matches, scene_corners[1] + Point2f( img_1.cols, 0),
+        scene_corners[2] + Point2f( img_1.cols, 0),
+        Scalar( 0, 255, 0), 2 );
+
+  line( img_matches, scene_corners[2] + Point2f( img_1.cols, 0),
+        scene_corners[3] + Point2f( img_1.cols, 0),
+        Scalar( 0, 255, 0), 2 );
+
+  line( img_matches, scene_corners[3] + Point2f( img_1.cols, 0),
+        scene_corners[0] + Point2f( img_1.cols, 0),
+        Scalar( 0, 255, 0), 2 );
+
+  //! Show detected matches
+  namedWindow( "Good Matches & Object detection", CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED );
+  imshow( "Good Matches & Object detection", img_matches );
+  waitKey(3);
 
   return H;
 }
@@ -152,10 +154,66 @@ void on_click_mouse(int event, int x, int y, int flags, void *param)
     cout << Point(x,y) << endl;
 }
 
+
+//! It is possible to extend to the image bottom with 'extend_to'.
+void free_hand_selection(const cv::Mat &img, Mat &mask)
+{
+  // Create a free hand contour
+  Path path;
+  free_hand_selection(img, path);
+
+//   for(size_t i=0; i<path.size(); i++)
+//      PRINT(path[i]);
+
+  // Mask from contour
+  mask = Mat::zeros(img.size(), CV_8UC1);
+  Path closed_path;
+  unsigned extent_to = mask.rows;
+  close_path(path, closed_path, extent_to);
+  contour2mask(closed_path, mask);
+}
+
 int main(int argc, char **argv)
 {
+ /* OpenCV stitching
   string folder = "../images/";
   string id = "05";
+  string original_path1 = folder + "source"      + id + ".png";
+  string original_path2 = folder + "destination" + id + ".png";
+  string original_path3 = folder + "mask"        + id + ".png";
+  vector<Mat> imgs;
+  Mat result;
+
+  Stitcher stitcher = Stitcher::createDefault(); // The value you entered here is the default
+
+  stitcher.setWarper(new PlaneWarper());
+
+  imgs.push_back( imread(folder + "fede01_back01.jpg") );
+  imgs.push_back( imread(folder + "fede01_back02.jpg") );
+//   imgs.push_back( imread(folder + "fede01_back03.jpg") );
+
+  Stitcher::Status status = stitcher.stitch(imgs, result);
+
+  if (status != Stitcher::OK)
+  {
+      cout << "Error stitching - Code: " <<int(status)<<endl;
+      return -1;
+  }
+
+//   imshow("Frame 1", imgs[0]);
+//   imshow("Frame 2", imgs[1]);
+  imshow("Stitched Image", result);
+  imwrite(folder + "fede01_dst.png", result);
+  waitKey();
+  return 0;
+*/
+
+
+
+// /*
+
+  string folder = "../images/";
+  string id = "08";
   string original_path1 = folder + "source"      + id + ".png";
   string original_path2 = folder + "destination" + id + ".png";
   string original_path3 = folder + "mask"        + id + ".png";
@@ -163,15 +221,26 @@ int main(int argc, char **argv)
   // read images
   Mat src  = imread(original_path1);
   Mat dst  = imread(original_path2);
-  Mat mask = imread(original_path3);
 
+  Mat mask = imread(original_path3);
   if(mask.channels() == 3)
     cvtColor(mask, mask, COLOR_BGR2GRAY);
 
+//   Mat mask;
+//   free_hand_selection(src, mask);
+//   imshow("mask", mask);
+//   imwrite("mask.png", mask);
+//   waitKey(0);
+
+  // No mask
+//   Mat mask = Mat::ones(src.size(), CV_8UC1);
+//   cout << "01\n";
+
   // Get homography
   Mat inverted_mask = 255 - mask;
-  Mat H = findHomography(src, dst, inverted_mask);
+  Mat H = findHomography(src, dst);
   Mat H_inv = H.inv();
+//   waitKey(0);
 
 
   //! Get the corners from the obj (the object to be "detected")
@@ -215,28 +284,23 @@ int main(int argc, char **argv)
 
 
 
-  // WarpPerspective: use homography to warp the image
-  Mat dst_warped;
-//   warpPerspective(dst, dst_warped, H.inv(), src.size());
-//   PRINT(H_inv);
-
-//   Mat_<float> H_trans = H;
-//   H_trans(0,2) = H_trans(0,2) + scene_corners[0].x;
-//   H_trans(1,2) = H_trans(1,2) + scene_corners[0].y;
-//   H_trans(0,2) = 0;
-//   H_trans(1,2) = 0;
-
 //   PRINT(H_trans);
   PRINT(H_trans * H_inv);
-//   PRINT(H_trans(1,2) = );
+
+
 
   Size size;
-  size.width  = -A + C + 10; // min(-A + C, -A+src.cols)
-  size.height = -B + D + 10; // min(-B + D, -B+src.rows)
+//   size.width  = -A + C + 10; // min(-A + C, -A+src.cols)
+//   size.height = -B + D + 10; // min(-B + D, -B+src.rows)
+  size.width  = max(-A + C, -A+src.cols);
+//   size.height = max(-B + D, -B+src.rows);
+  size.height = min(-B + D, -B+src.rows);
   PRINT(size);
   PRINT(src.size());
 
+  Mat dst_warped;
   warpPerspective(dst, dst_warped, H_trans * H_inv, size);
+//   PRINT(H_inv);
   namedWindow("dst_warped");
   setMouseCallback("dst_warped", on_click_mouse, NULL);
   imshow("dst_warped", dst_warped );
@@ -244,33 +308,52 @@ int main(int argc, char **argv)
 //   waitKey(0);
 
 
-  // Source & Mask (selected area)
-  Mat src_mask;
-  src.copyTo(src_mask, mask);
-//   imshow("src_mask", src_mask );
-//   imshow("src", src );
+  // Reduced version of src and mask (common/visible area)
+  Mat reduced_src, reduced_mask;
+  roi = Rect( Point(0,0), Point(mask.cols, min(dst_warped.rows+(int)B, mask.rows) ) );
+  reduced_mask = mask(roi).clone();
+  reduced_src = src(roi).clone();
+  reduced_src.copyTo(reduced_src, reduced_mask);
+
+  imshow("reduced_src", reduced_src );
+  imshow("src", src );
+  imshow("reduced_mask", reduced_mask );
+
+  PRINT(reduced_src.size());
+  PRINT(src.size());
+//   waitKey(0);
 
   // Cut & Paste
   Mat dst_copy = dst_warped.clone();
-//   src_mask.copyTo(dst_copy, mask);
-  src_mask.copyTo(dst_copy( Rect(Point(-A,-B), Point(-A+src.cols, -B+src.rows)) ), mask);
-//   cutpaste(Point(-A,-B), src_mask, dst_copy);
+  reduced_src.copyTo(dst_copy( Rect(Point(-A,-B), Point(-A+reduced_src.cols, -B+reduced_src.rows)) ), reduced_mask);
+//   cutpaste(Point(-A,-B), reduced_src, dst_copy);
   imshow("cutpaste", dst_copy );
-  waitKey(500);
+  waitKey(300);
+
+
 
   // Seamless cloning
   Mat result;
-  seamlessClone(src_mask, dst_warped, mask, Point(-A,-B), result, 1);
-  imshow( "seamlessClone", result );
+  seamlessClone(reduced_src, dst_warped, reduced_mask, Point(-A,-B), result, 1);
+//   draw_cross(result, Point(-A,-B));
+  imshow( "seamlessClone (Result)", result );
 
-  Mat result_roi = result(Rect( Point(0,0), Point(-A+src.cols-10, -B+src.rows-10) ) );
-  imshow( "result_roi", result_roi );
+//   int offset = 10; // button offset
+//   Mat result_roi = result(Rect(Point(0, 0), Point(result.cols, min(result.rows, src.rows - offset))) );
+//   Mat result_roi = result(Rect(Point(0, 0), Point(result.cols, result.rows)));
+//   imshow("result_roi", result_roi);
+  imshow("src (Original)", src);
 
-  imshow( "src", src );
 
-  waitKey(0);
+
+  // Exit with 'q' or ESC (27)
+  char k;
+  while ( (k = waitKey(0)) != 'q' && k != 27 )
+    ;
 
   return 0;
+
+// */
 }
 
 
