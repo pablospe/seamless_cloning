@@ -1,4 +1,5 @@
 #include "path.h"
+#include "path.h"
 #include "interactive.h"
 
 #include <iostream>
@@ -145,6 +146,22 @@ static void on_mouse(int event, int x, int y, int flags, void *param)
   }
 }
 
+void free_hand_selection(const cv::Mat &img, Mat &mask)
+{
+  // Create a free hand contour
+  Path path;
+  free_hand_selection(img, path);
+
+//   for(size_t i=0; i<path.size(); i++)
+//      PRINT(path[i]);
+
+  // Mask from path
+  mask = Mat::zeros(img.size(), CV_8UC1);
+  Path closed_path;
+  unsigned extent_to = mask.rows;
+  close_path(path, closed_path, extent_to);
+  contour2mask(closed_path, mask);
+}
 
 void free_hand_selection(const Mat &img, Path &path)
 {

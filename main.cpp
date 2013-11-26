@@ -156,24 +156,6 @@ void on_click_mouse(int event, int x, int y, int flags, void *param)
 }
 
 
-//! It is possible to extend to the image bottom with 'extend_to'.
-void free_hand_selection(const cv::Mat &img, Mat &mask)
-{
-  // Create a free hand contour
-  Path path;
-  free_hand_selection(img, path);
-
-//   for(size_t i=0; i<path.size(); i++)
-//      PRINT(path[i]);
-
-  // Mask from contour
-  mask = Mat::zeros(img.size(), CV_8UC1);
-  Path closed_path;
-  unsigned extent_to = mask.rows;
-  close_path(path, closed_path, extent_to);
-  contour2mask(closed_path, mask);
-}
-
 int main(int argc, char **argv)
 {
  /* OpenCV stitching

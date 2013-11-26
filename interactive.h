@@ -14,7 +14,10 @@ void place_src(const cv::Mat &src,
                const cv::Mat &dst,
                cv::Point &dst_point);
 
-//! \brief Create a free hand mask.
+//! \brief Create a free hand mask
+void free_hand_selection(const cv::Mat &img, cv::Mat &mask);
+
+//! \brief Create a free hand mask, return a Path
 void free_hand_selection(const cv::Mat &img, Path &path);
 
 #endif // __INTERACTIVE_H__
