@@ -64,6 +64,7 @@ cv::Mat findHomography(const cv::Mat &img_1,
   //! Get "good" matches (i.e. whose distance is less than certain threshold)
   vector<DMatch> good_matches;
   int threshold = 3;
+//   int threshold = 5;
   for( int i = 0; i < descriptors_1.rows; i++ )
   {
     if( matches[i].distance < threshold*min_dist )
@@ -212,8 +213,36 @@ int main(int argc, char **argv)
 
 // /*
 
+  // Command line
+  const char *commandline_usage = "\tusage: ./seamless_cloning -h[--help] | --id <dataset>\n";
+  string id = "04";
+
+  for (int i = 1; i < argc; i++)
+  {
+    if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+    {
+      cout << commandline_usage;
+      return 0;
+    }
+
+    if (strcmp(argv[i], "--id") == 0)
+    {
+      if (argc > i + 1)
+      {
+        id = argv[i + 1];
+
+      }
+      else
+      {
+        cout << commandline_usage;
+        return 0;
+      }
+    }
+  }
+
+
   string folder = "../images/";
-  string id = "08";
+//   string id = "03";
   string original_path1 = folder + "source"      + id + ".png";
   string original_path2 = folder + "destination" + id + ".png";
   string original_path3 = folder + "mask"        + id + ".png";
@@ -303,7 +332,7 @@ int main(int argc, char **argv)
 //   PRINT(H_inv);
   namedWindow("dst_warped");
   setMouseCallback("dst_warped", on_click_mouse, NULL);
-  imshow("dst_warped", dst_warped );
+//   imshow("dst_warped", dst_warped );
   imshow("dst", dst);
 //   waitKey(0);
 
@@ -316,8 +345,8 @@ int main(int argc, char **argv)
   reduced_src.copyTo(reduced_src, reduced_mask);
 
   imshow("reduced_src", reduced_src );
-  imshow("src", src );
-  imshow("reduced_mask", reduced_mask );
+  imshow("src (Original)", src );
+//   imshow("reduced_mask", reduced_mask );
 
   PRINT(reduced_src.size());
   PRINT(src.size());
@@ -342,7 +371,7 @@ int main(int argc, char **argv)
 //   Mat result_roi = result(Rect(Point(0, 0), Point(result.cols, min(result.rows, src.rows - offset))) );
 //   Mat result_roi = result(Rect(Point(0, 0), Point(result.cols, result.rows)));
 //   imshow("result_roi", result_roi);
-  imshow("src (Original)", src);
+//   imshow("src (Original)", src);
 
 
 
