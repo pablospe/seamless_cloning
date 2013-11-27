@@ -119,7 +119,7 @@ int main(int argc, char **argv)
   C = min(P[1].x, P[2].x);
   D = min(P[2].y, P[3].y);
   Rect_<float> roi = Rect_<float>(Point2f(A, B), Point2f(C, D));
-  PRINT(roi);
+//   PRINT(roi);
 
   Mat_<double> H_trans = (Mat_<double>(3, 3) <<  1,  0, -A,
                                                  0,  1, -B,
@@ -149,16 +149,17 @@ int main(int argc, char **argv)
   size.width  = max(-A + C, -A+src.cols);
 //   size.height = max(-B + D, -B+src.rows);
   size.height = min(-B + D, -B+src.rows);
-  PRINT(size);
-  PRINT(src.size());
+//   PRINT(size);
+//   PRINT(src.size());
 
   Mat dst_warped;
   warpPerspective(dst, dst_warped, H_trans * H_inv, size);
 //   PRINT(H_inv);
-  namedWindow("dst_warped");
-  setMouseCallback("dst_warped", on_click_mouse, NULL);
+//   namedWindow("dst_warped");
+//   setMouseCallback("dst_warped", on_click_mouse, NULL);
 //   imshow("dst_warped", dst_warped );
-  imshow("dst", dst);
+  imshow("dst (back camera)", dst);
+  imwrite("dst.png", dst);
 //   waitKey(0);
 
 
@@ -169,19 +170,21 @@ int main(int argc, char **argv)
   reduced_src = src(roi).clone();
   reduced_src.copyTo(reduced_src, reduced_mask);
 
-  imshow("reduced_src", reduced_src );
-  imshow("src (Original)", src );
+//   imshow("reduced_src", reduced_src );
+  imshow("src (front camera)", src );
+  imwrite("src.png", src);
 //   imshow("reduced_mask", reduced_mask );
 
-  PRINT(reduced_src.size());
-  PRINT(src.size());
+//   PRINT(reduced_src.size());
+//   PRINT(src.size());
 //   waitKey(0);
 
   // Cut & Paste
-  Mat dst_copy = dst_warped.clone();
-  reduced_src.copyTo(dst_copy( Rect(Point(-A,-B), Point(-A+reduced_src.cols, -B+reduced_src.rows)) ), reduced_mask);
+  Mat cutpaste = dst_warped.clone();
+  reduced_src.copyTo(cutpaste( Rect(Point(-A,-B), Point(-A+reduced_src.cols, -B+reduced_src.rows)) ), reduced_mask);
 //   cutpaste(Point(-A,-B), reduced_src, dst_copy);
-  imshow("cutpaste", dst_copy );
+  imshow("cutpaste", cutpaste );
+  imwrite("cutpaste.png", cutpaste );
   waitKey(300);
 
 
@@ -191,6 +194,7 @@ int main(int argc, char **argv)
   seamlessClone(reduced_src, dst_warped, reduced_mask, Point(-A,-B), result, 1);
 //   draw_cross(result, Point(-A,-B));
   imshow( "seamlessClone (Result)", result );
+  imwrite("result.png", result);
 
 //   int offset = 10; // button offset
 //   Mat result_roi = result(Rect(Point(0, 0), Point(result.cols, min(result.rows, src.rows - offset))) );
