@@ -11,6 +11,7 @@ add_executable( seamless_cloning
                 interactive.cpp
                 main.cpp
                 path.cpp
+                quadrilateral.cpp
                 seamless_cloning.cpp
                 utils.cpp
 )

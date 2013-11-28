@@ -1,8 +1,9 @@
 #include <iostream>
 
-#include "path.h"
 #include "homography.h"
 #include "interactive.h"
+#include "path.h"
+#include "quadrilateral.h"
 #include "seamless_cloning.h"
 #include "utils.h"
 
@@ -22,7 +23,9 @@ void on_click_mouse(int event, int x, int y, int flags, void *param)
 }
 
 // Apply homography 'H' to corners of the image 'img'
-void apply_H_to_corners(const Mat &img, const Mat &H, vector<Point2f> &projected_corners)
+// Note: clockwise order, starting with (0,0) -> (w,0) -> (w,h) -> (0,h)
+void apply_H_to_corners(const Mat &img, const Mat &H,
+                        vector<Point2f> &projected_corners)
 {
   int h = img.rows;
   int w = img.cols;
@@ -113,7 +116,7 @@ int main(int argc, char **argv)
   // Get inner rectangle from a quadrilateral
   vector<Point2f> P(4);
   P = scene_corners;
-  float A, B, C, D;
+  float A, B, C, D;  // clockwise order -> A: left, B: top, C: right, D: bottom
   A = max(P[0].x, P[3].x);
   B = max(P[0].y, P[1].y);
   C = min(P[1].x, P[2].x);
