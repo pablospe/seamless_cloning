@@ -94,11 +94,11 @@ int main(int argc, char **argv)
 //   waitKey(0);
 
   // No mask
-//   Mat mask = Mat::ones(src.size(), CV_8UC1);
-//   cout << "01\n";
+//  Mat mask(src.size(), CV_8UC1, 255);  // TODO: there is a bug using '1' instead of '255'
 
   // Find Homography
-  Mat inverted_mask = 255 - mask;
+  int max_level = *std::max_element(mask.begin<uchar>(), mask.end<uchar>());
+  Mat inverted_mask = max_level - mask;
   bool display = true;
 //   bool display = false;
   Mat H = findH(src, dst, inverted_mask, cv::Mat(), display);

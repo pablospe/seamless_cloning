@@ -42,7 +42,7 @@ void seamlessClone(cv::InputArray _src,
   {
     for(int i = 0; i < w; i++)
     {
-      if(gray.at<uchar>(j, i) == 255)
+      if(gray.at<uchar>(j, i) != 0)
       {
         minx = std::min(minx, i);
         maxx = std::max(maxx, i);
