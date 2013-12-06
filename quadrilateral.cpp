@@ -69,16 +69,16 @@ void Quadrilateral::print()
        << "P[3] = " << P_[3] << " (left-bottom)\n";
 }
 
-Rect Quadrilateral::inner_rect()
+Rect_<float> Quadrilateral::inner_rect()
 {
-  return Rect(Point2f(left_max(), top_max()),
-              Point2f(right_min(), bottom_min()));
+  return Rect_<float>(Point2f(left_max(), top_max()),
+                      Point2f(right_min(), bottom_min()));
 }
 
-Rect Quadrilateral::outer_rect()
+Rect_<float> Quadrilateral::outer_rect()
 {
-  return Rect(Point2f(left_min(), top_min()),
-              Point2f(right_max(), bottom_max()));
+  return Rect_<float>(Point2f(left_min(), top_min()),
+                      Point2f(right_max(), bottom_max()));
 }
 
 void Quadrilateral::apply_homography(const Mat &H)

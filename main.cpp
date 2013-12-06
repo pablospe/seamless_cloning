@@ -49,10 +49,11 @@ int main(int argc, char **argv)
 {
 // /*
 
+  // Default dataset id
+  string id = "05";
+
   // Command line
   const char *commandline_usage = "\tusage: ./seamless_cloning -h[--help] | --id <dataset>\n";
-  string id = "03";
-
   for (int i = 1; i < argc; i++)
   {
     if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
@@ -86,10 +87,12 @@ int main(int argc, char **argv)
   Mat src  = imread(original_path1);
   Mat dst  = imread(original_path2);
 
+  // read mask
   Mat mask = imread(original_path3);
   if(mask.channels() == 3)
     cvtColor(mask, mask, COLOR_BGR2GRAY);
 
+//   // create mask by hand
 //   Mat mask;
 //   free_hand_selection(src, mask);
 //   imshow("mask", mask);
@@ -97,7 +100,8 @@ int main(int argc, char **argv)
 //   waitKey(0);
 
   // No mask
-//  Mat mask(src.size(), CV_8UC1, 255);  // TODO: there is a bug using '1' instead of '255'
+//  Mat mask(src.size(), CV_8UC1, 255); // TODO: there is a bug using '1' instead of '255'
+
 
   // Find Homography
   int max_level = *std::max_element(mask.begin<uchar>(), mask.end<uchar>());
@@ -106,88 +110,62 @@ int main(int argc, char **argv)
 //   bool display = false;
   Mat H = findH(src, dst, inverted_mask, cv::Mat(), display);
   Mat H_inv = H.inv();
-//   waitKey(0);
 
 
-  vector<Point2f> scene_corners(4);
-  apply_H_to_corners(dst, H_inv, scene_corners);
+  // Get internal and external rectangle of a quadrilateral
+  Quadrilateral dst_quad(dst.size());
+  dst_quad.apply_homography(H_inv);
+  Rect_<float> outer_rect = dst_quad.outer_rect();
+  Rect_<float> inner_rect = dst_quad.inner_rect();
+
+  // src ROI
+  Rect_<float> src_roi(0, 0, src.cols, src.rows);
+
+  // Union and Intersection ROIs
+  Rect_<float> union_roi = src_roi | outer_rect;
+  Rect_<float> inter_roi = src_roi & inner_rect;
+
+  // mask ROI
+  Rect mask_roi;
+  get_bounding_box(mask, mask_roi);
 
 
-  // Get inner rectangle from a quadrilateral
-  vector<Point2f> P(4);
-  P = scene_corners;
-  float A, B, C, D;  // clockwise order -> A: left, B: top, C: right, D: bottom
-  A = max(P[0].x, P[3].x);
-  B = max(P[0].y, P[1].y);
-  C = min(P[1].x, P[2].x);
-  D = min(P[2].y, P[3].y);
-  Rect_<float> roi = Rect_<float>(Point2f(A, B), Point2f(C, D));
-//   PRINT(roi);
-
+  // H_trans: displacement
+  float A, B;  // A: left, B: top
+  A = union_roi.x;
+  B = union_roi.y;
   Mat_<double> H_trans = (Mat_<double>(3, 3) <<  1,  0, -A,
                                                  0,  1, -B,
                                                  0,  0,  1 );
 
-  PRINT(H_trans);
-  vector<Point2f> obj_corners(4);
-  obj_corners[0] = Point2f(A, B);
-  obj_corners[1] = Point2f(C, B);
-  obj_corners[2] = Point2f(C, D);
-  obj_corners[3] = Point2f(A, D);
-  perspectiveTransform(obj_corners, scene_corners, H_trans);
 
-  for(size_t i = 0; i < scene_corners.size(); i++)
-    PRINT(scene_corners[i]);
-
-
-
-//   PRINT(H_trans);
-  PRINT(H_trans * H_inv);
-
-
-
-  Size size;
-//   size.width  = -A + C + 10; // min(-A + C, -A+src.cols)
-//   size.height = -B + D + 10; // min(-B + D, -B+src.rows)
-  size.width  = max(-A + C, -A+src.cols);
-//   size.height = max(-B + D, -B+src.rows);
-  size.height = min(-B + D, -B+src.rows);
-//   PRINT(size);
-//   PRINT(src.size());
-
+  // Warp Perspective
+  Size size(union_roi.width, union_roi.height);
   Mat dst_warped;
   warpPerspective(dst, dst_warped, H_trans * H_inv, size);
-//   PRINT(H_inv);
-//   namedWindow("dst_warped");
-//   setMouseCallback("dst_warped", on_click_mouse, NULL);
-//   imshow("dst_warped", dst_warped );
-  imshow("dst (back camera)", dst);
-  imwrite("dst.png", dst);
-//   waitKey(0);
+  imshow("dst_warped", dst_warped );
+//   imshow("dst (back camera)", dst);
+//   imwrite("dst.png", dst);
+  waitKey(10);
+
 
 
   // Reduced version of src and mask (common/visible area)
   Mat reduced_src, reduced_mask;
-  roi = Rect( Point(0,0), Point(mask.cols, min(dst_warped.rows+(int)B, mask.rows) ) );
+  Rect roi = inter_roi;
   reduced_mask = mask(roi).clone();
   reduced_src = src(roi).clone();
   reduced_src.copyTo(reduced_src, reduced_mask);
 
-//   imshow("reduced_src", reduced_src );
-  imshow("src (front camera)", src );
-  imwrite("src.png", src);
-//   imshow("reduced_mask", reduced_mask );
-
-//   PRINT(reduced_src.size());
-//   PRINT(src.size());
-//   waitKey(0);
+  // The origin has been moved
+  A = A - inter_roi.x;
+  B = B - inter_roi.y;
 
   // Cut & Paste
   Mat cutpaste = dst_warped.clone();
   reduced_src.copyTo(cutpaste( Rect(Point(-A,-B), Point(-A+reduced_src.cols, -B+reduced_src.rows)) ), reduced_mask);
-//   cutpaste(Point(-A,-B), reduced_src, dst_copy);
   imshow("cutpaste", cutpaste );
-  imwrite("cutpaste.png", cutpaste );
+//   imwrite("cutpaste.png", cutpaste );
   waitKey(300);
 
 
@@ -197,13 +175,14 @@ int main(int argc, char **argv)
   seamlessClone(reduced_src, dst_warped, reduced_mask, Point(-A,-B), result, 1);
 //   draw_cross(result, Point(-A,-B));
   imshow( "seamlessClone (Result)", result );
-  imwrite("result.png", result);
+//   imwrite("result.png", result);
 
-//   int offset = 10; // button offset
-//   Mat result_roi = result(Rect(Point(0, 0), Point(result.cols, min(result.rows, src.rows - offset))) );
-//   Mat result_roi = result(Rect(Point(0, 0), Point(result.cols, result.rows)));
-//   imshow("result_roi", result_roi);
-//   imshow("src (Original)", src);
+
+
+
+
+  // TODO: cut the parts we are not interested in (black holes)
+  // ...
 
 
 

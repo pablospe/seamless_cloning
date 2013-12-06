@@ -34,10 +34,10 @@ public:
   void print();
 
   //! \brief Return the inner rectangle
-  cv::Rect inner_rect();
+  cv::Rect_<float> inner_rect();
 
   //! \brief Return the outer rectangle
-  cv::Rect outer_rect();
+  cv::Rect_<float> outer_rect();
 
   //! \brief Apply a perspective transform to the quadrilateral points
   // TODO: the relationship between points (left-top, right-top, etc.) might

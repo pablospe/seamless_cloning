@@ -3,6 +3,7 @@
 
 #include <opencv2/core/core.hpp>
 
+// FindHomography using Ransac
 cv::Mat findH(const cv::Mat &img_1,
               const cv::Mat &img_2,
               const cv::Mat &mask_1 =cv::Mat(),
