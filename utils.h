@@ -19,9 +19,41 @@ inline void draw_cross(cv::Mat &img,
 }
 
 //! \brief Create an image where 'src' is paste into 'dst', starting in point 'p'.
-void cutpaste(const cv::Point &p, const cv::Mat &src, cv::Mat &dst);
+void cut_and_paste(cv::Mat &dst,
+                   const cv::Mat &src,
+                   const cv::Point &offset);
+
+void cut_and_paste(cv::Mat &dst,
+                   const cv::Mat &src,
+                   const cv::Mat &mask,
+                   const cv::Point &offset);
 
 //! \brief Create a bounding box from a binary mask.
 void get_bounding_box(const cv::Mat &mask, cv::Rect &roi);
+inline cv::Rect get_bounding_box(const cv::Mat &mask)
+{
+  cv::Rect roi;
+  get_bounding_box(mask, roi);
+  return roi;
+}
+
+//! \brief Draw a cv::Rect
+void draw_rect(cv::Mat &img,
+               const cv::Rect &roi,
+               const cv::Scalar &color =cv::Scalar(0, 255, 255));
+
+//! \brief Get a cv::Rect from a cv::Mat
+inline cv::Rect get_rect(const cv::Mat &img)
+{
+  return cv::Rect(0, 0, img.cols, img.rows);
+}
+
+inline cv::Rect apply_offset(cv::Rect &roi, const cv::Point &offset)
+{
+  roi.x += offset.x;
+  roi.y += offset.y;
+//   roi.width  += offset.x;
+//   roi.height += offset.y;
+}
 
 #endif // __UTILS_H__

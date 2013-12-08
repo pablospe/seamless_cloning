@@ -42,15 +42,79 @@ void apply_H_to_corners(const Mat &img, const Mat &H,
 //     PRINT(projected_corners[i]);
 }
 
-// void quadri2rect()
-// {}
+Mat tmp;
+
+void crop(const Rect &src,
+          const Rect &mask,
+          const Rect &inner,
+          const Point &offset,
+          Rect &roi)
+{
+  Rect left, right, top;
+
+  left.x      = inner.x;
+  left.y      = src.y;
+  left.width  = src.x - inner.x;
+  left.height = src.height;
+
+  right.x      = src.x + src.width;
+  right.y      = src.y;
+  right.width  = inner.width - left.width - src.width;
+  right.height = src.height;
+
+  top.x      = src.x;
+  top.y      = inner.y;
+  top.width  = src.width;
+  top.height = inner.height - src.height;
+
+  // Debug
+  Mat tmp2 = tmp.clone();
+  draw_rect(tmp2,  src,  Scalar(0, 255, 255));
+  draw_rect(tmp2, mask,  Scalar(0, 125, 255));
+  draw_rect(tmp2, left,  Scalar(0,   0, 255));
+  draw_rect(tmp2, right, Scalar(255, 0, 255));
+  draw_rect(tmp2, top,   Scalar(255, 0,   0));
+  imshow("tmp2", tmp2);
+
+  draw_rect(tmp, src, Scalar(255, 0, 0));
+  imshow("tmp", tmp);
+  waitKey(0);
+
+  roi = src;
+
+  // Extend to left
+  if(mask.x > src.x)
+    roi |= left;
+
+  draw_rect(tmp, roi, Scalar(0, 125, 255));
+  imshow("tmp", tmp);
+  waitKey(0);
+
+
+  // Extend to right
+  if(mask.x + mask.width < src.x + src.width)
+    roi |= right;
+
+  draw_rect(tmp, roi, Scalar(0, 0, 255));
+  imshow("tmp", tmp);
+  waitKey(0);
+
+
+  // Extend to top
+  if(mask.y > src.y)
+    roi |= top;
+
+  draw_rect(tmp, roi, Scalar(255, 0, 0));
+  imshow("tmp", tmp);
+  waitKey(0);
+}
 
 int main(int argc, char **argv)
 {
 // /*
 
   // Default dataset id
-  string id = "05";
+  string id = "04";
 
   // Command line
   const char *commandline_usage = "\tusage: ./seamless_cloning -h[--help] | --id <dataset>\n";
@@ -119,23 +183,22 @@ int main(int argc, char **argv)
   Rect_<float> inner_rect = dst_quad.inner_rect();
 
   // src ROI
-  Rect_<float> src_roi(0, 0, src.cols, src.rows);
+  Rect_<float> src_roi = get_rect(src);
 
   // Union and Intersection ROIs
   Rect_<float> union_roi = src_roi | outer_rect;
   Rect_<float> inter_roi = src_roi & inner_rect;
 
   // mask ROI
-  Rect mask_roi;
-  get_bounding_box(mask, mask_roi);
+  Rect mask_roi = get_bounding_box(mask);
 
 
   // H_trans: displacement
-  float A, B;  // A: left, B: top
-  A = union_roi.x;
-  B = union_roi.y;
-  Mat_<double> H_trans = (Mat_<double>(3, 3) <<  1,  0, -A,
-                                                 0,  1, -B,
+  Point offset;
+  offset.x = -union_roi.x;
+  offset.y = -union_roi.y;
+  Mat_<double> H_trans = (Mat_<double>(3, 3) <<  1,  0, offset.x,
+                                                 0,  1, offset.y,
                                                  0,  0,  1 );
 
 
@@ -143,37 +206,34 @@ int main(int argc, char **argv)
   Size size(union_roi.width, union_roi.height);
   Mat dst_warped;
   warpPerspective(dst, dst_warped, H_trans * H_inv, size);
-  imshow("dst_warped", dst_warped );
+  imshow("dst_warped", dst_warped);
 //   imshow("dst (back camera)", dst);
 //   imwrite("dst.png", dst);
-  waitKey(10);
-
 
 
   // Reduced version of src and mask (common/visible area)
   Mat reduced_src, reduced_mask;
   Rect roi = inter_roi;
   reduced_mask = mask(roi).clone();
-  reduced_src = src(roi).clone();
-  reduced_src.copyTo(reduced_src, reduced_mask);
+  src(roi).copyTo(reduced_src, reduced_mask);
 
   // The origin has been moved
-  A = A - inter_roi.x;
-  B = B - inter_roi.y;
+  Point new_offset = offset;
+  new_offset.x -= inter_roi.x;
+  new_offset.y -= inter_roi.y;
 
   // Cut & Paste
   Mat cutpaste = dst_warped.clone();
-  reduced_src.copyTo(cutpaste( Rect(Point(-A,-B), Point(-A+reduced_src.cols, -B+reduced_src.rows)) ), reduced_mask);
-  imshow("cutpaste", cutpaste );
+  cut_and_paste(cutpaste, reduced_src, reduced_mask, new_offset);
+  imshow("cutpaste", cutpaste);
 //   imwrite("cutpaste.png", cutpaste );
   waitKey(300);
 
 
-
   // Seamless cloning
   Mat result;
-  seamlessClone(reduced_src, dst_warped, reduced_mask, Point(-A,-B), result, 1);
-//   draw_cross(result, Point(-A,-B));
+  seamlessClone(reduced_src, dst_warped, reduced_mask, new_offset, result, 1);
+//   draw_cross(result, new_offset);
   imshow( "seamlessClone (Result)", result );
 //   imwrite("result.png", result);
 
@@ -181,8 +241,15 @@ int main(int argc, char **argv)
 
 
 
-  // TODO: cut the parts we are not interested in (black holes)
-  // ...
+  // Crop image, extend when possible (depending on the bounding box of the mask)
+  tmp = result.clone();
+  Rect reduced_src_roi  = get_rect(reduced_src);
+  Rect reduced_mask_roi = get_bounding_box(reduced_mask);
+  Rect inner_roi = inner_rect;
+  apply_offset(reduced_src_roi,  new_offset);
+  apply_offset(reduced_mask_roi, new_offset);
+  apply_offset(inner_roi, offset);
+  crop(reduced_src_roi, reduced_mask_roi, inner_roi, new_offset, roi);
 
 
 

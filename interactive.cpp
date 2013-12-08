@@ -37,7 +37,7 @@ static void create_square_mask_handler(int event, int x, int y, int flags, void 
     // create mask same size as source, and in white (255) the selected subimg
     g_mask  = Mat::zeros(g_src.size(), CV_8UC1);
     Mat white = Mat::ones(subimg.size(), CV_8UC1)*255;
-    cutpaste(g_point, white, g_mask);
+    cut_and_paste(g_mask, white, g_point);
 
     g_drag = 0;
   }

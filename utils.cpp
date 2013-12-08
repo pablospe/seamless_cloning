@@ -6,16 +6,29 @@
 using namespace std;
 using namespace cv;
 
-void cutpaste(const Point &p, const Mat &src, Mat &dst)
+void cut_and_paste(cv::Mat &dst,
+                   const cv::Mat &src,
+                   const cv::Point &offset)
 {
-  if(p.x < 0 || p.y < 0 || p.x + src.cols > dst.cols || p.y + src.rows > dst.rows)
+  Mat mask(src.size(), CV_8UC1, 255);
+  cut_and_paste(dst, src, mask, offset);
+}
+
+void cut_and_paste(cv::Mat &dst,
+                   const cv::Mat &src,
+                   const cv::Mat &mask,
+                   const cv::Point &offset)
+{
+  if(offset.x < 0 || offset.y < 0   ||
+     offset.x + src.cols > dst.cols ||
+     offset.y + src.rows > dst.rows)
   {
     cout << "Out of range" << endl;
     return;
   }
 
-  Mat dst_roi = dst(Rect(p.x, p.y, src.cols, src.rows));
-  src.copyTo(dst_roi);
+  Mat dst_roi = dst(Rect(offset.x, offset.y, src.cols, src.rows));
+  src.copyTo(dst_roi, mask);
 }
 
 void get_bounding_box(const Mat &mask, Rect &roi)
@@ -49,4 +62,11 @@ void get_bounding_box(const Mat &mask, Rect &roi)
   int leny = maxy - miny;
 
   roi = Rect(minx, miny, lenx, leny);
+}
+
+void draw_rect(cv::Mat &img,
+               const cv::Rect &roi,
+               const cv::Scalar &color)
+{
+  rectangle(img, Point(roi.x,roi.y), Point(roi.x+roi.width, roi.y+roi.height), color, 1, 8, 0);
 }
