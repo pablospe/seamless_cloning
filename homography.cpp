@@ -130,10 +130,10 @@ cv::Mat findH(const cv::Mat &img_1,
         Scalar(0, 255, 0), 2);
 
     // Show detected matches
-//     namedWindow("Good Matches & Object detection", CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
-//     imshow("homography", img_matches);
+    namedWindow("homography", CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
+    imshow("homography", img_matches);
     imwrite("homography.png", img_matches);
-//     waitKey(3);
+    waitKey(300);
   }
 
   return H;
