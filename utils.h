@@ -52,8 +52,6 @@ inline cv::Rect apply_offset(cv::Rect &roi, const cv::Point &offset)
 {
   roi.x += offset.x;
   roi.y += offset.y;
-//   roi.width  += offset.x;
-//   roi.height += offset.y;
 }
 
 #endif // __UTILS_H__
