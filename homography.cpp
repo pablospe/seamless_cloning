@@ -49,44 +49,45 @@ cv::Mat findH(const cv::Mat &img_1,
 
   // Get "good" matches (i.e. whose distance is less than certain threshold)
   vector<DMatch> good_matches;
-  int threshold = 3;
-//   int threshold = 5;
-  for(int i = 0; i < descriptors_1.rows; i++)
+
+  // Try different 'threshold' until number of inliers is more than NUM_INLIERS
+  const int NUM_INLIERS = 50;
+  vector<DMatch> inliers;
+  Mat H;
+  for(int threshold = 3; threshold < 7; threshold++)
   {
-    if(matches[i].distance < threshold * min_dist)
+    for(int i = 0; i < descriptors_1.rows; i++)
     {
-      good_matches.push_back(matches[i]);
+      if(matches[i].distance < threshold * min_dist)
+      {
+        good_matches.push_back(matches[i]);
+      }
     }
-  }
-  cout << "Number of good_matches = " << good_matches.size() << endl;
+    cout << "Number of good_matches = " << good_matches.size() << endl;
 
-  if(good_matches.size() < 4)
-  {
-    cerr << "error: good_matches.size() < 4\n";
-    return Mat();
-  }
+    if(good_matches.size() < 4)
+    {
+      cerr << "error: good_matches.size() < 4\n";
+      return Mat();
+    }
 
-  // Localize the object from img_1 in img_2
-  vector<Point2f> obj;
-  vector<Point2f> scene;
-  for(int i = 0; i < good_matches.size(); i++)
-  {
-    // Get the keypoints from the good matches
-    obj.push_back(keypoints_1[ good_matches[i].queryIdx ].pt);
-    scene.push_back(keypoints_2[ good_matches[i].trainIdx ].pt);
-  }
+    // Localize the object from img_1 in img_2
+    vector<Point2f> obj;
+    vector<Point2f> scene;
+    for(int i = 0; i < good_matches.size(); i++)
+    {
+      // Get the keypoints from the good matches
+      obj.push_back(keypoints_1[ good_matches[i].queryIdx ].pt);
+      scene.push_back(keypoints_2[ good_matches[i].trainIdx ].pt);
+    }
 
-  // FindHomography using Ransac
-  vector<uchar> status;
-  double ransacReprojThreshold = 10;
-  Mat H = findHomography(obj, scene, CV_RANSAC, ransacReprojThreshold, status);
-  cout << "H = \n" << H << endl;
+    // FindHomography using Ransac
+    vector<uchar> status;
+    double ransacReprojThreshold = 10;
+    H = findHomography(obj, scene, CV_RANSAC, ransacReprojThreshold, status);
+    cout << "H = \n" << H << endl;
 
-  if(display)
-  {
     // Get inliers using the 'status' of the findHomography() function
-    vector<DMatch> inliers;
-
     for(int i = 0; i < good_matches.size(); i++)
     {
       if(status[i])
@@ -94,9 +95,14 @@ cv::Mat findH(const cv::Mat &img_1,
         inliers.push_back(good_matches[i]);
       }
     }
-
     cout << "Number of inliers = " << inliers.size() << endl;
+    cout << "threshold " << threshold << endl;
+    if(inliers.size() >= NUM_INLIERS)
+      break;
+  }
 
+  if(display)
+  {
     // Get the corners from the obj (the object to be "detected")
     vector<Point2f> obj_corners(4);
     obj_corners[0] = Point(0, 0);
