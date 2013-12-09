@@ -193,15 +193,15 @@ int main(int argc, char **argv)
   // Get internal and external rectangle of a quadrilateral
   Quadrilateral dst_quad(dst.size());
   dst_quad.apply_homography(H_inv);
-  Rect_<float> outer_rect = dst_quad.outer_rect();
-  Rect_<float> inner_rect = dst_quad.inner_rect();
+  Rect outer_rect = dst_quad.outer_rect();
+  Rect inner_rect = dst_quad.inner_rect();
 
   // src ROI
-  Rect_<float> src_roi = get_rect(src);
+  Rect src_roi = get_rect(src);
 
   // Union and Intersection ROIs
-  Rect_<float> union_roi = src_roi | outer_rect;
-  Rect_<float> inter_roi = src_roi & inner_rect;
+  Rect union_roi = src_roi | outer_rect;
+  Rect inter_roi = src_roi & inner_rect;
 
   // mask ROI
   Rect mask_roi = get_bounding_box(mask);

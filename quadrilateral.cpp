@@ -15,7 +15,7 @@ Quadrilateral::Quadrilateral(const Quadrilateral &other)
   operator=(other);
 }
 
-Quadrilateral::Quadrilateral(const Rect_<float> &R)
+Quadrilateral::Quadrilateral(const Rect &R)
 {
   P_.resize(4);
   fromRect(R);
@@ -41,7 +41,7 @@ const Quadrilateral &Quadrilateral::operator=(const Quadrilateral &other)
   return other;
 }
 
-void Quadrilateral::fromRect(const cv::Rect_<float> &R)
+void Quadrilateral::fromRect(const cv::Rect &R)
 {
   P_[0] = Point2f(R.x, R.y);
   P_[1] = Point2f(R.x + R.width, R.y);
@@ -69,16 +69,16 @@ void Quadrilateral::print()
        << "P[3] = " << P_[3] << " (left-bottom)\n";
 }
 
-Rect_<float> Quadrilateral::inner_rect()
+Rect Quadrilateral::inner_rect()
 {
-  return Rect_<float>(Point2f(left_max(), top_max()),
-                      Point2f(right_min(), bottom_min()));
+  return Rect(Point2f(left_max(), top_max()),
+              Point2f(right_min(), bottom_min()));
 }
 
-Rect_<float> Quadrilateral::outer_rect()
+Rect Quadrilateral::outer_rect()
 {
-  return Rect_<float>(Point2f(left_min(), top_min()),
-                      Point2f(right_max(), bottom_max()));
+  return Rect(Point2f(left_min(), top_min()),
+              Point2f(right_max(), bottom_max()));
 }
 
 void Quadrilateral::apply_homography(const Mat &H)
