@@ -42,13 +42,12 @@ void apply_H_to_corners(const Mat &img, const Mat &H,
 //     PRINT(projected_corners[i]);
 }
 
-Mat tmp;
-
 void crop(const Rect &src,
           const Rect &mask,
           const Rect &inner,
           const Point &offset,
-          Rect &roi)
+          Rect &roi,
+          Mat tmp = Mat())
 {
   Rect left, right, top;
 
@@ -65,48 +64,63 @@ void crop(const Rect &src,
   top.x      = src.x;
   top.y      = inner.y;
   top.width  = src.width;
-  top.height = inner.height - src.height;
+  top.height = src.y - inner.y;
 
   // Debug
-  Mat tmp2 = tmp.clone();
-  draw_rect(tmp2,  src,  Scalar(0, 255, 255));
-  draw_rect(tmp2, mask,  Scalar(0, 125, 255));
-  draw_rect(tmp2, left,  Scalar(0,   0, 255));
-  draw_rect(tmp2, right, Scalar(255, 0, 255));
-  draw_rect(tmp2, top,   Scalar(255, 0,   0));
-  imshow("tmp2", tmp2);
+  if(!tmp.empty())
+  {
+    Mat tmp2 = tmp.clone();
+    draw_rect(tmp2,  src,  Scalar(0, 255, 255));
+    draw_rect(tmp2, mask,  Scalar(0, 125, 255));
+    draw_rect(tmp2, left,  Scalar(0,   0, 255));
+    draw_rect(tmp2, right, Scalar(255, 0, 255));
+    draw_rect(tmp2, top,   Scalar(255, 0,   0));
+    imshow("tmp2", tmp2);
 
-  draw_rect(tmp, src, Scalar(255, 0, 0));
-  imshow("tmp", tmp);
-  waitKey(0);
+    draw_rect(tmp, src, Scalar(255, 0, 0));
+    imshow("tmp", tmp);
+    waitKey(0);
+  }
 
   roi = src;
 
-  // Extend to left
+  //! Extend to left
   if(mask.x > src.x)
     roi |= left;
 
-  draw_rect(tmp, roi, Scalar(0, 125, 255));
-  imshow("tmp", tmp);
-  waitKey(0);
+  // Debug
+  if(!tmp.empty())
+  {
+    draw_rect(tmp, roi, Scalar(0, 125, 255));
+    imshow("tmp", tmp);
+    waitKey(0);
+  }
 
 
-  // Extend to right
+  //! Extend to right
   if(mask.x + mask.width < src.x + src.width)
     roi |= right;
 
-  draw_rect(tmp, roi, Scalar(0, 0, 255));
-  imshow("tmp", tmp);
-  waitKey(0);
+  // Debug
+  if(!tmp.empty())
+  {
+    draw_rect(tmp, roi, Scalar(0, 0, 255));
+    imshow("tmp", tmp);
+    waitKey(0);
+  }
 
 
-  // Extend to top
+  //! Extend to top
   if(mask.y > src.y)
     roi |= top;
 
-  draw_rect(tmp, roi, Scalar(255, 0, 0));
-  imshow("tmp", tmp);
-  waitKey(0);
+  // Debug
+  if(!tmp.empty())
+  {
+    draw_rect(tmp, roi, Scalar(255, 0, 0));
+    imshow("tmp", tmp);
+    waitKey(0);
+  }
 }
 
 int main(int argc, char **argv)
@@ -114,7 +128,7 @@ int main(int argc, char **argv)
 // /*
 
   // Default dataset id
-  string id = "04";
+  string id = "07";
 
   // Command line
   const char *commandline_usage = "\tusage: ./seamless_cloning -h[--help] | --id <dataset>\n";
@@ -234,22 +248,22 @@ int main(int argc, char **argv)
   Mat result;
   seamlessClone(reduced_src, dst_warped, reduced_mask, new_offset, result, 1);
 //   draw_cross(result, new_offset);
-  imshow( "seamlessClone (Result)", result );
+  imshow("seamlessClone (Result)", result);
 //   imwrite("result.png", result);
 
 
 
-
-
   // Crop image, extend when possible (depending on the bounding box of the mask)
-  tmp = result.clone();
   Rect reduced_src_roi  = get_rect(reduced_src);
   Rect reduced_mask_roi = get_bounding_box(reduced_mask);
   Rect inner_roi = inner_rect;
   apply_offset(reduced_src_roi,  new_offset);
   apply_offset(reduced_mask_roi, new_offset);
   apply_offset(inner_roi, offset);
-  crop(reduced_src_roi, reduced_mask_roi, inner_roi, new_offset, roi);
+//   crop(reduced_src_roi, reduced_mask_roi, inner_roi, new_offset, roi);
+  crop(reduced_src_roi, reduced_mask_roi, inner_roi, new_offset, roi, result.clone());  // "result.clone()" for debug
+
+  imshow("Final result", result(roi));
 
 
 
