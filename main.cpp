@@ -105,32 +105,33 @@ bool read_images(const string &id, Mat &src, Mat &dst, Mat &mask)
   if(mask.channels() == 3)
     cvtColor(mask, mask, COLOR_BGR2GRAY);
 
-//   // create mask by hand
-//   mask;
-//   free_hand_selection(src, mask);
-//   imshow("mask", mask);
-//   imwrite("mask.png", mask);
-//   waitKey(0);
+  // create mask by hand
+  if(mask.empty())
+  {
+    free_hand_selection(src, mask);
+    imshow("mask", mask);
+    imwrite("mask.png", mask);
+    waitKey(0);
+  }
 
   // No mask
 //  mask = Mask(src.size(), CV_8UC1, 255); // TODO: there is a bug using '1' instead of '255'
 
-
   if(src.empty())
   {
-    cerr << "Error loading images: " << original_path1 << endl;
+    cerr << "Error loading image: " << original_path1 << endl;
     return false;
   }
 
   if(dst.empty())
   {
-    cerr << "Error loading images: " << original_path2 << endl;
+    cerr << "Error loading image: " << original_path2 << endl;
     return false;
   }
 
   if(mask.empty())
   {
-    cerr << "Error loading images: " << original_path3 << endl;
+    cerr << "Error loading image: " << original_path3 << endl;
     return false;
   }
 
