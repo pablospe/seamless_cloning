@@ -17,8 +17,8 @@ cv::Mat findH(const cv::Mat &img_1,
   // Detect the keypoints using a Detector (SIFT or SURF)
   SiftFeatureDetector detector;  // or SurfFeatureDetector
   vector<KeyPoint> keypoints_1, keypoints_2;
-  detector.detect(img_1, keypoints_1);
-  detector.detect(img_2, keypoints_2);
+  detector.detect(img_1, keypoints_1, mask_1);
+  detector.detect(img_2, keypoints_2, mask_2);
 
   // Calculate descriptors (feature vectors).
   SiftDescriptorExtractor extractor;  // or SurfDescriptorExtractor
