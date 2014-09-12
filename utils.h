@@ -6,6 +6,20 @@
 // print a statement
 #define PRINT(X) (cout << #X": " << X << endl)
 
+//! \brief Display the blending of two images.
+//
+// If 'animation' is true it will increment/decrement
+// the \alpha value automatically each 'delayms'.
+//
+// If 'animation' is false, the user will enter the \alpha value
+// by using the Trackbar.
+void display_blending(const std::string &winname,
+                      cv::InputArray src1,
+                      cv::InputArray src2,
+                      int steps =100,
+                      bool animation =true,
+                      int delayms=5);
+
 //! \brief Draw a cross in the image.
 inline void draw_cross(cv::Mat &img,
                        const cv::Point &center,

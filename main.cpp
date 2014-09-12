@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 
 #include "homography.h"
 #include "interactive.h"
@@ -46,16 +47,17 @@ int main(int argc, char **argv)
   // Apply pipeline
   Mat result;
   Rect roi;
-  bool debug = true;
+//   bool debug = true;
+  bool debug = false;
   status_ok = two_images(src, dst, mask, result, roi, debug);
   if( !status_ok )
     return 1;
 
-  // Display final result, Press 'q' or ESC (27) to exit
-  imshow("Final result", result(roi));
-  char k;
-  while ( (k = waitKey(0)) != 'q' && k != 27 )
-    ;
+//   // Display final result, Press 'q' or ESC (27) to exit
+//   imshow("Final result", result(roi));
+//   char k;
+//   while ( (k = waitKey(0)) != 'q' && k != 27 )
+//     ;
 
   return 0;
 }
@@ -289,7 +291,6 @@ bool two_images(const Mat &src,
   }
 
   // Seamless cloning
-  result;
   seamlessClone(reduced_src, dst_warped, reduced_mask, new_offset, result, 1);
   if(debug)
   {
@@ -312,8 +313,17 @@ bool two_images(const Mat &src,
     tmp = result.clone();
   crop(reduced_src_roi, reduced_mask_roi, inner_roi, new_offset, roi, tmp);
 
+
+  Mat final = result(roi);
   if(debug)
     imwrite("final_result.png", result(roi));
+
+  // Display blending
+  int steps = 100;
+  int animation = true;
+  int delayms = 5;
+  display_blending("Linear Blend", final, cutpaste(roi),
+                   steps, animation, delayms);
 
   return true;
 }

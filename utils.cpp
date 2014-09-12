@@ -1,10 +1,86 @@
 #include "utils.h"
 
 #include <iostream>
+#include <iomanip>
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 using namespace cv;
+
+void display_blending(const string &winname,
+                      InputArray _src1,
+                      InputArray _src2,
+                      int steps,
+                      bool animation,
+                      int delayms)
+{
+  // getMat
+  Mat src1 = _src1.getMat();
+  Mat src2 = _src2.getMat();
+
+  // Show 'src1' (no initial linear blend)
+  float alpha = 1.f, beta = 0.f;
+  Mat blend;
+  addWeighted(src1, alpha, src2, beta, 0.0, blend);
+  imshow(winname, blend);
+
+  // Internal variables
+  int count = 0, last_count = 0, sgn = -1;
+
+  // Show Trackbar
+  if (!animation)
+    createTrackbar("Alpha", winname, &count, steps);
+
+  // Press 'q' or ESC (27) to exit
+  char k;
+  while ((k = waitKey(delayms)) != 'q' && k != 27)
+  {
+    if (animation)
+    {
+      // Stop animation pressing 's' or Space
+      if(k == 's' || k == ' ')
+      {
+        animation = false;
+        createTrackbar("Alpha", winname, &count, steps);
+        displayStatusBar(winname, "");
+        continue;
+      }
+
+      // Change direction
+      if (count <= 0 || count >= steps)
+        sgn = -sgn;
+
+      // Increase/decrease depending of 'sgn'
+      string text;
+      if (sgn > 0)
+      {
+        count++;
+        text = " -> ";
+      }
+      else
+      {
+        count--;
+        text = " <- ";
+      }
+
+      // Show status
+      stringstream status;
+      status << '(' << count << '/' << steps << ')';
+      displayStatusBar(winname, text + status.str());
+    }
+
+    // Update linear blend
+    if (last_count != count)
+    {
+      beta = static_cast<float>(count) / steps;
+      alpha = 1.f - beta;
+      Mat blend;
+      addWeighted(src1, alpha, src2, beta, 0.0, blend);
+      imshow(winname, blend);
+      last_count = count;
+    }
+  }
+}
 
 void cut_and_paste(cv::Mat &dst,
                    const cv::Mat &src,
