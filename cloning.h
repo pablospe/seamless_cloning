@@ -3,9 +3,8 @@
 #ifndef __CLONING_H__
 #define __CLONING_H__
 
-class Cloning
-{
-public:
+class Cloning {
+ public:
   void init_var(cv::Mat &I, cv::Mat &wmask);
   void initialization(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask);
   void scalar_product(cv::Mat mat, float r, float g, float b);
@@ -20,17 +19,21 @@ public:
   void idst(double *mod_diff, double *sineTransform, int h, int w);
   void transpose(double *mat, double *mat_t, int h, int w);
   void solve(const cv::Mat &img, double *mod_diff, cv::Mat &result);
-  void poisson_solver(const cv::Mat &img, cv::Mat &gxx , cv::Mat &gyy, cv::Mat &result);
-  void normal_clone(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask, cv::Mat &cloned, int num);
-  void local_color_change(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask, cv::Mat &cloned, float red_mul, float green_mul, float blue_mul);
-  void illum_change(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask, cv::Mat &cloned, float alpha, float beta);
-  void texture_flatten(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask, double low_threshold, double high_threhold, int kernel_size, cv::Mat &cloned);
+  void poisson_solver(const cv::Mat &img, cv::Mat &gxx, cv::Mat &gyy,
+                      cv::Mat &result);
+  void normal_clone(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask, cv::Mat &cloned,
+                    int num);
+  void local_color_change(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask,
+                          cv::Mat &cloned, float red_mul, float green_mul,
+                          float blue_mul);
+  void illum_change(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask, cv::Mat &cloned,
+                    float alpha, float beta);
+  void texture_flatten(cv::Mat &I, cv::Mat &mask, cv::Mat &wmask,
+                       double low_threshold, double high_threhold,
+                       int kernel_size, cv::Mat &cloned);
 
-private:
-  std::vector<cv::Mat> rgb_channel,
-      rgbx_channel,
-      rgby_channel,
-      output;
+ private:
+  std::vector<cv::Mat> rgb_channel, rgbx_channel, rgby_channel, output;
 
   cv::Mat grx, gry, sgx, sgy, srx32, sry32, grx32, gry32, smask, smask1;
 };

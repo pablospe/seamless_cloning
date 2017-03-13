@@ -1,6 +1,6 @@
-#include "path.h"
-#include "path.h"
 #include "interactive.h"
+#include "path.h"
+#include "path.h"
 
 #include <iostream>
 #include <opencv2/highgui/highgui.hpp>
@@ -15,17 +15,13 @@ static Point g_point;
 static int g_drag = 0;
 static int destx = -1, desty = -1;
 
-static void create_square_mask_handler(int event, int x, int y, int flags, void *param)
-{
-  if(event == CV_EVENT_LBUTTONDOWN && !g_drag)
-  {
+static void create_square_mask_handler(int event, int x, int y, int flags,
+                                       void *param) {
+  if (event == CV_EVENT_LBUTTONDOWN && !g_drag) {
     g_point = Point(x, y);
-    g_drag  = 1;
-  }
-  else if(event == CV_EVENT_LBUTTONDOWN && g_drag)
-  {
-    if(x - g_point.x < 0 || y - g_point.y < 0)
-      return;
+    g_drag = 1;
+  } else if (event == CV_EVENT_LBUTTONDOWN && g_drag) {
+    if (x - g_point.x < 0 || y - g_point.y < 0) return;
 
     Rect roi(g_point.x, g_point.y, x - g_point.x, y - g_point.y);
     Mat subimg;
@@ -35,31 +31,28 @@ static void create_square_mask_handler(int event, int x, int y, int flags, void 
     waitKey(3);
 
     // create mask same size as source, and in white (255) the selected subimg
-    g_mask  = Mat::zeros(g_src.size(), CV_8UC1);
-    Mat white = Mat::ones(subimg.size(), CV_8UC1)*255;
+    g_mask = Mat::zeros(g_src.size(), CV_8UC1);
+    Mat white = Mat::ones(subimg.size(), CV_8UC1) * 255;
     cut_and_paste(g_mask, white, g_point);
 
     g_drag = 0;
   }
 
-  if(event == CV_EVENT_MOUSEMOVE && g_drag)
-  {
+  if (event == CV_EVENT_MOUSEMOVE && g_drag) {
     Mat tmp;
     g_src.copyTo(tmp);
     rectangle(tmp, g_point, Point(x, y), CV_RGB(255, 0, 0), 1, 8, 0);
     imshow("Source", tmp);
   }
 
-  if(event == CV_EVENT_RBUTTONUP)
-  {
+  if (event == CV_EVENT_RBUTTONUP) {
     imshow("Source", g_src);
     g_drag = 0;
   }
 }
 
-void create_square_mask(const cv::Mat &src, cv::Mat &mask)
-{
-  g_point = Point(0,0);  // starting point of the ROI
+void create_square_mask(const cv::Mat &src, cv::Mat &mask) {
+  g_point = Point(0, 0);  // starting point of the ROI
   g_drag = 0;
   g_mask = Mat();
   g_src = src;
@@ -72,43 +65,40 @@ void create_square_mask(const cv::Mat &src, cv::Mat &mask)
   g_mask.copyTo(mask);
 }
 
-static void place_src_handler(int event, int x, int y, int flags, void *param)
-{
+static void place_src_handler(int event, int x, int y, int flags, void *param) {
   Mat im;
   g_dst.copyTo(im);
 
-  if(event == CV_EVENT_LBUTTONDOWN /*|| event == CV_EVENT_MOUSEMOVE*/)
-  {
+  if (event == CV_EVENT_LBUTTONDOWN /*|| event == CV_EVENT_MOUSEMOVE*/) {
     destx = x;
     desty = y;
 
-    cout << Point(x,y) << endl;
+    cout << Point(x, y) << endl;
 
     // Draw mask bounding box (usually smaller than subimg box)
     Rect roi;
     get_bounding_box(g_mask, roi);
-    rectangle(im, Point(x,y), Point(x + roi.width, y + roi.height), CV_RGB(0, 255, 255), 1, 8, 0);
+    rectangle(im, Point(x, y), Point(x + roi.width, y + roi.height),
+              CV_RGB(0, 255, 255), 1, 8, 0);
 
     // Draw mask
-    rectangle(im, Point(x - roi.x, y - roi.y), Point(x + g_mask.cols, y + g_mask.rows),
-              CV_RGB(255, 0, 0), 1, 8, 0);
+    rectangle(im, Point(x - roi.x, y - roi.y),
+              Point(x + g_mask.cols, y + g_mask.rows), CV_RGB(255, 0, 0), 1, 8,
+              0);
 
-    if(x + roi.width > g_dst.cols || y + roi.height > g_dst.rows)
+    if (x + roi.width > g_dst.cols || y + roi.height > g_dst.rows)
       cout << "Index out of range" << endl;
 
     imshow("Destination", im);
   }
 }
 
-void place_src(const cv::Mat &src,
-               const cv::Mat &mask,
-               const cv::Mat &dst,
-               Point &dst_point)
-{
+void place_src(const cv::Mat &src, const cv::Mat &mask, const cv::Mat &dst,
+               Point &dst_point) {
   destx = desty = -1;
-//   g_src  = src;
+  //   g_src  = src;
   g_mask = mask;
-  g_dst  = dst;
+  g_dst = dst;
 
   namedWindow("Destination");
   setMouseCallback("Destination", place_src_handler, NULL);
@@ -118,25 +108,18 @@ void place_src(const cv::Mat &src,
   dst_point = Point(destx, desty);
 }
 
-
 // TODO: delete these global variables
-static Point prev_point = Point(-1,-1);
+static Point prev_point = Point(-1, -1);
 static Mat g_img;
 static Path g_path;
 
-static void on_mouse(int event, int x, int y, int flags, void *param)
-{
-
-  if(event == CV_EVENT_MOUSEMOVE && (flags & CV_EVENT_FLAG_LBUTTON))
-  {
+static void on_mouse(int event, int x, int y, int flags, void *param) {
+  if (event == CV_EVENT_MOUSEMOVE && (flags & CV_EVENT_FLAG_LBUTTON)) {
     g_point = Point(x, y);
 
-    if( prev_point == Point(-1,-1) )
-    {
+    if (prev_point == Point(-1, -1)) {
       prev_point = g_point;
-    }
-    else
-    {
+    } else {
       line(g_img, prev_point, g_point, CV_RGB(0, 255, 255), 2);
     }
 
@@ -146,14 +129,13 @@ static void on_mouse(int event, int x, int y, int flags, void *param)
   }
 }
 
-void free_hand_selection(const cv::Mat &img, Mat &mask)
-{
+void free_hand_selection(const cv::Mat &img, Mat &mask) {
   // Create a free hand contour
   Path path;
   free_hand_selection(img, path);
 
-//   for(size_t i=0; i<path.size(); i++)
-//      PRINT(path[i]);
+  //   for(size_t i=0; i<path.size(); i++)
+  //      PRINT(path[i]);
 
   // Mask from path
   mask = Mat::zeros(img.size(), CV_8UC1);
@@ -163,9 +145,8 @@ void free_hand_selection(const cv::Mat &img, Mat &mask)
   contour2mask(closed_path, mask);
 }
 
-void free_hand_selection(const Mat &img, Path &path)
-{
-  prev_point = Point(-1,-1);
+void free_hand_selection(const Mat &img, Path &path) {
+  prev_point = Point(-1, -1);
   img.copyTo(g_img);
   g_path.clear();
 

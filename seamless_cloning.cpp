@@ -2,22 +2,18 @@
 #include "cloning.h"
 
 #include <iostream>
-#include <opencv2/photo/photo.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/photo/photo.hpp>
 
 #include "utils.h"
 
 using namespace std;
 using namespace cv;
 
-void seamlessClone(cv::InputArray _src,
-                   cv::InputArray _dst,
-                   cv::InputArray _mask,
-                   cv::Point p,
-                   cv::OutputArray _blend,
-                   int flags)
-{
-  Mat src  = _src.getMat();
+void seamlessClone(cv::InputArray _src, cv::InputArray _dst,
+                   cv::InputArray _mask, cv::Point p, cv::OutputArray _blend,
+                   int flags) {
+  Mat src = _src.getMat();
   Mat dest = _dst.getMat();
   Mat mask = _mask.getMat();
   _blend.create(dest.size(), CV_8UC3);
@@ -32,18 +28,15 @@ void seamlessClone(cv::InputArray _src,
   Mat cs_mask = Mat::zeros(src.size(), CV_8UC3);
   Mat cd_mask = Mat::zeros(dest.size(), CV_8UC3);
 
-  if(mask.channels() == 3)
+  if (mask.channels() == 3)
     cvtColor(mask, gray, COLOR_BGR2GRAY);
   else
     gray = mask;
 
   // Mask bounding box
-  for(int j = 0; j < h; j++)
-  {
-    for(int i = 0; i < w; i++)
-    {
-      if(gray.at<uchar>(j, i) != 0)
-      {
+  for (int j = 0; j < h; j++) {
+    for (int i = 0; i < w; i++) {
+      if (gray.at<uchar>(j, i) != 0) {
         minx = std::min(minx, i);
         maxx = std::max(maxx, i);
         miny = std::min(miny, j);
@@ -59,8 +52,7 @@ void seamlessClone(cv::InputArray _src,
   int minyd = p.y;
   int maxyd = p.y + leny;
 
-  if(maxxd > dest.cols || maxyd > dest.rows)
-  {
+  if (maxxd > dest.cols || maxyd > dest.rows) {
     cout << "Index out of range" << endl;
     return;
   }
@@ -85,15 +77,10 @@ void seamlessClone(cv::InputArray _src,
   obj.normal_clone(dest, cd_mask, dst_mask, blend, flags);
 }
 
-void colorChange(cv::InputArray _src,
-                 cv::InputArray _mask,
-                 cv::OutputArray _dst,
-                 float r,
-                 float g,
-                 float b)
-{
-  Mat src  = _src.getMat();
-  Mat mask  = _mask.getMat();
+void colorChange(cv::InputArray _src, cv::InputArray _mask,
+                 cv::OutputArray _dst, float r, float g, float b) {
+  Mat src = _src.getMat();
+  Mat mask = _mask.getMat();
   _dst.create(src.size(), src.type());
   Mat blend = _dst.getMat();
 
@@ -103,7 +90,7 @@ void colorChange(cv::InputArray _src,
 
   Mat gray = Mat::zeros(mask.size(), CV_8UC1);
 
-  if(mask.channels() == 3)
+  if (mask.channels() == 3)
     cvtColor(mask, gray, COLOR_BGR2GRAY);
   else
     gray = mask;
@@ -116,16 +103,10 @@ void colorChange(cv::InputArray _src,
   obj.local_color_change(src, cs_mask, gray, blend, red, green, blue);
 }
 
-
-void illuminationChange(cv::InputArray _src,
-                        cv::InputArray _mask,
-                        cv::OutputArray _dst,
-                        float a,
-                        float b)
-{
-
-  Mat src  = _src.getMat();
-  Mat mask  = _mask.getMat();
+void illuminationChange(cv::InputArray _src, cv::InputArray _mask,
+                        cv::OutputArray _dst, float a, float b) {
+  Mat src = _src.getMat();
+  Mat mask = _mask.getMat();
   _dst.create(src.size(), src.type());
   Mat blend = _dst.getMat();
   float alpha = a;
@@ -133,7 +114,7 @@ void illuminationChange(cv::InputArray _src,
 
   Mat gray = Mat::zeros(mask.size(), CV_8UC1);
 
-  if(mask.channels() == 3)
+  if (mask.channels() == 3)
     cvtColor(mask, gray, COLOR_BGR2GRAY);
   else
     gray = mask;
@@ -144,25 +125,19 @@ void illuminationChange(cv::InputArray _src,
 
   Cloning obj;
   obj.illum_change(src, cs_mask, gray, blend, alpha, beta);
-
 }
 
-void textureFlattening(cv::InputArray _src,
-                       cv::InputArray _mask,
-                       cv::OutputArray _dst,
-                       double low_threshold,
-                       double high_threshold,
-                       int kernel_size)
-{
-
-  Mat src  = _src.getMat();
-  Mat mask  = _mask.getMat();
+void textureFlattening(cv::InputArray _src, cv::InputArray _mask,
+                       cv::OutputArray _dst, double low_threshold,
+                       double high_threshold, int kernel_size) {
+  Mat src = _src.getMat();
+  Mat mask = _mask.getMat();
   _dst.create(src.size(), src.type());
   Mat blend = _dst.getMat();
 
   Mat gray = Mat::zeros(mask.size(), CV_8UC1);
 
-  if(mask.channels() == 3)
+  if (mask.channels() == 3)
     cvtColor(mask, gray, COLOR_BGR2GRAY);
   else
     gray = mask;
@@ -172,5 +147,6 @@ void textureFlattening(cv::InputArray _src,
   src.copyTo(cs_mask, gray);
 
   Cloning obj;
-  obj.texture_flatten(src, cs_mask, gray, low_threshold, high_threshold, kernel_size, blend);
+  obj.texture_flatten(src, cs_mask, gray, low_threshold, high_threshold,
+                      kernel_size, blend);
 }
